@@ -71,7 +71,7 @@ def scrape_series_details(target_url, create_series_master_df=False):
 
     # This is where we start scraping details for each season of our TV show:
     for season in seasons_link_lst:
-        print(season)
+        print("Season we're scraping:", season)
 
         # Pause for a bit, to simulate clicking through pages at human speeds:
         sleep(randint(9,18))
@@ -107,7 +107,7 @@ def scrape_series_details(target_url, create_series_master_df=False):
         logger.info("Added season DF to master DF")
 
     # Saving Series Master DF to pickle object:
-    #series_master_df.to_pickle("data/series_master_df.pkl.bz2", compression="bz2")
+    series_master_df.to_pickle("data/series_master_df.pkl.bz2", compression="bz2")
     logger.info("Saved Series Master DF to pickle object")
 
     # Saving Series Master DF data to (optional) CSV:
@@ -151,6 +151,7 @@ def get_and_clean_details(soup):
     ---
     *df: Pandas DataFrame of cleaned up TV show data
     """
+    # Pulling out relevant scraped data from soup object for list-ifying in the next step:
     all_eps_div = soup.find("div", {"class": "list detail eplist"})
     title_strong = all_eps_div.find_all("strong")
     ep_no = all_eps_div.find_all("meta")
@@ -159,7 +160,7 @@ def get_and_clean_details(soup):
     rating_span = all_eps_div.find_all("span", {"class": "ipl-rating-star__rating"})
     no_usr_rtgs_span = all_eps_div.find_all("span", {"class": "ipl-rating-star__total-votes"})
 
-
+    # Placing all the relevant scraped data into lists of values we can place into a dictionary (for later turning into a DF):
     ep_number_lst = []
     for number in ep_no:
         ep_number_lst.append(number["content"])
@@ -183,8 +184,15 @@ def get_and_clean_details(soup):
         no_usr_rtgs_lst.append(int(number.string[1:-1].replace(",", "")))
     show_season_ep = []
     for title, number in zip(range(len(title_strong)), ep_number_lst):
-            show_season_ep.append(f"{soup.title.string[:-7]} " + "- " + f"{number}")
+        show_season_ep.append(f"{soup.title.string[:-7]} " + "- " + f"{number}")
+    season_only_lst = []
+    for title in range(len(title_strong)):
+        season_only_lst.append(int(soup.title.string[-9:-7].lstrip()))
+    ep_only_lst = []
+    for num in ep_number_lst:
+        ep_only_lst.append(int(num))
 
+    # Creating a dictionary to build the DF:
     combined_dict = {
         "show_sea_ep": show_season_ep,
         "ep_title": title_lst,
@@ -192,9 +200,43 @@ def get_and_clean_details(soup):
         "synopsis": desc_lst,
         "IMDB_ID": ep_id_lst,
         "IMDB_user_rating": rating_lst,
-        "num_IMDB_usr_rtgs": no_usr_rtgs_lst
+        "num_IMDB_usr_rtgs": no_usr_rtgs_lst,
+        "season": season_only_lst,
+        "episode": ep_only_lst
         }
+
+    # Building the DF from the above dict object:
     df = pd.DataFrame(combined_dict)
+
+    # Turning values in ep_title and IMDB_user_rating into str and float, rather than bs4.element.NavigableString objects (blows up pickling the DF w/recursion error):
+    df["ep_title"] = df["ep_title"].astype(str)
+    df["IMDB_user_rating"] =  df["IMDB_user_rating"].astype(float)
+
+    # Creating a column just for series value (for Star Trek only!):
+    trek_series_dict = {"The Original Series": "TOS",
+                        "The Animated Series": "TAS",
+                        "The Next Generation": "TNG",
+                        "Deep Space Nine": "DS9",
+                        "Voyager": "VOY",
+                        "Enterprise": "ENT",
+                        "Discovery": "DIS",
+                        "Short Treks": "ST",
+                        "Picard": "PIC",
+                        "Lower Decks": "LD"}
+
+    if "Star Trek" in soup.title.string:
+        for idx, long_title in enumerate(df["show_sea_ep"].values):
+            for full, abv in trek_series_dict.items():
+                if full in long_title:
+                    df.loc[idx, "series"] = abv
+
+    # Creating a column just for debut/airdate year (airdate must not be a datetime object yet):
+    for idx, year in enumerate(df["airdate"].values):
+        df.loc[idx, "year"] = year[-4:]
+    df["year"] = df["year"].astype(int)
+
+    # Now we can make airdate a datetime object:
+    df["airdate"] = pd.to_datetime(df["airdate"])
 
     return df
 
