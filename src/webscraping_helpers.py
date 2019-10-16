@@ -13,6 +13,26 @@ logger = CL.logger
 
 example_main_target_url = "https://www.imdb.com/title/tt0060028/"
 
+# For Star Trek Only!
+trek_series_links_lst = ["https://www.imdb.com/title/tt0060028/",
+                         "https://www.imdb.com/title/tt0069637/",
+                         "https://www.imdb.com/title/tt0092455/",
+                         "https://www.imdb.com/title/tt0106145/",
+                         "https://www.imdb.com/title/tt0112178/",
+                         "https://www.imdb.com/title/tt0244365/"
+
+                         """
+                         "https://www.imdb.com/title/tt5171438/",
+                         "https://www.imdb.com/title/tt9059594/",
+                         "https://www.imdb.com/title/tt8806524/",
+                         "https://www.imdb.com/title/tt9184820/"
+                         """
+                         ]
+
+def scrape_multi_series(target_url, create_master_df=False):
+    for link in target_url:
+        scrape_series_details(link, create_master_df)
+
 def scrape_series_details(target_url, create_series_master_df=False):
     """
     All-in-one function to scrape IMDB info for all seasons of a given show and put them into a Pandas DataFrame. Calls on scrape_season, get_and_clean_details, and add_season functions once season data is scraped.
@@ -74,7 +94,7 @@ def scrape_series_details(target_url, create_series_master_df=False):
         print("Season we're scraping:", season)
 
         # Pause for a bit, to simulate clicking through pages at human speeds:
-        sleep(randint(9,18))
+        sleep(randint(3,7))
 
         # Make a request for a season:
         logger.info(f"Scraping season data for {season}")
@@ -107,11 +127,11 @@ def scrape_series_details(target_url, create_series_master_df=False):
         logger.info("Added season DF to master DF")
 
     # Saving Series Master DF to pickle object:
-    series_master_df.to_pickle("data/series_master_df.pkl.bz2", compression="bz2")
+    series_master_df.to_pickle(f"data/{soup.title.string.replace(' ', '-')[:-7]}.pkl.bz2", compression="bz2")
     logger.info("Saved Series Master DF to pickle object")
 
     # Saving Series Master DF data to (optional) CSV:
-    series_master_df.to_csv(f"data/{soup.title.string.replace(' ', '-')}.csv")
+    series_master_df.to_csv(f"data/{soup.title.string.replace(' ', '-')[:-7]}.csv")
     logger.info("Save Series Master DF data to CSV")
 
     return series_master_df
@@ -175,7 +195,7 @@ def get_and_clean_details(soup):
         airdate_lst.append(date.string.lstrip().rstrip())
     desc_lst = []
     for desc in desc_div:
-        desc_lst.append(desc.string.lstrip().rstrip())
+        desc_lst.append(desc.text.lstrip().rstrip())
     rating_lst = []
     for rating in rating_span[::23]:
         rating_lst.append(rating.string)
@@ -191,6 +211,7 @@ def get_and_clean_details(soup):
     ep_only_lst = []
     for num in ep_number_lst:
         ep_only_lst.append(int(num))
+    title_only = soup.title.string
 
     # Creating a dictionary to build the DF:
     combined_dict = {
@@ -214,7 +235,7 @@ def get_and_clean_details(soup):
 
     # Creating a column just for series value (for Star Trek only!):
     trek_series_dict = {"The Original Series": "TOS",
-                        "The Animated Series": "TAS",
+                        "Star Trek - Season": "TAS",
                         "The Next Generation": "TNG",
                         "Deep Space Nine": "DS9",
                         "Voyager": "VOY",
@@ -227,7 +248,7 @@ def get_and_clean_details(soup):
     if "Star Trek" in soup.title.string:
         for idx, long_title in enumerate(df["show_sea_ep"].values):
             for full, abv in trek_series_dict.items():
-                if full in long_title:
+                if full in soup.title.string:
                     df.loc[idx, "series"] = abv
 
     # Creating a column just for debut/airdate year (airdate must not be a datetime object yet):
