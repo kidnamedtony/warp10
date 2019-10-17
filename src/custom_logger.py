@@ -3,9 +3,12 @@ import logging
 # Creating a custom logger object:
 logger = logging.getLogger("webscraping_helpers")
 
+# Setting global setting for logging
+logging.basicConfig(level=logging.DEBUG)
+
 # Handlers for the logger oject:
 c_handler = logging.StreamHandler()
-f_handler = logging.FileHandler("Progress.log", "w")
+f_handler = logging.FileHandler("Progress.log", "a")
 c_handler.setLevel(logging.INFO)
 f_handler.setLevel(logging.DEBUG)
 

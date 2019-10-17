@@ -11,6 +11,7 @@ from . import custom_logger as CL
 
 logger = CL.logger
 
+# By way of example, here's the IMDB page for "Star Trek: The Original Series":
 example_main_target_url = "https://www.imdb.com/title/tt0060028/"
 
 # For Star Trek Only!
