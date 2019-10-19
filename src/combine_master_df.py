@@ -76,5 +76,8 @@ def create_combined_master_df(DF_storage_directory="data/"):
     combined_master_df.drop_duplicates(inplace=True)
     combined_master_df = combined_master_df.reset_index().drop("index", axis=1)
 
+    # And finally, here we smash all the text columns into one (so that we can cluster it with KMeans later):
+    combined_master_df["super_blob"] = combined_master_df["synopsis"]+" "+combined_master_df["title_blob"]+" "+combined_master_df["rev_blob"]
+    combined_master_df.to_pickle("data/combined_info_rev_df.pkl.bz2", compression="bz2")
 
     return combined_master_df
