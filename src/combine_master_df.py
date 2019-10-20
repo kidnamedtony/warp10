@@ -76,8 +76,15 @@ def create_combined_master_df(DF_storage_directory="data/"):
     combined_master_df.drop_duplicates(inplace=True)
     combined_master_df = combined_master_df.reset_index().drop("index", axis=1)
 
-    # And finally, here we smash all the text columns into one (so that we can cluster it with KMeans later):
+    # Here we smash all the text columns into one (so that we can cluster it with KMeans later):
     combined_master_df["super_blob"] = combined_master_df["synopsis"]+" "+combined_master_df["title_blob"]+" "+combined_master_df["rev_blob"]
     combined_master_df.to_pickle("data/combined_info_rev_df.pkl.bz2", compression="bz2")
+
+    # And finally, we give the DF an identifier column, smashing Series, Season, and Episode columns together:
+    for idx, episode in enumerate(combined_test["episode"].values):
+        if episode < 10:
+            combined_test.loc[idx, "identifier"] = f"{combined_test.loc[idx, 'series']}" + "s0" + f"{combined_test.loc[idx, 'season']}" + "e0" + f"{combined_test.loc[idx, 'episode']}"
+        else:
+            combined_test.loc[idx, "identifier"] = f"{combined_test.loc[idx, 'series']}" + "s0" + f"{combined_test.loc[idx, 'season']}" + "e" + f"{combined_test.loc[idx, 'episode']}"
 
     return combined_master_df
