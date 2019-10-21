@@ -20,8 +20,20 @@ trek_series_links_lst = ["https://www.imdb.com/title/tt0060028/",
                          "https://www.imdb.com/title/tt0244365/"
                          ]
 
-def scrape_all_reviews(target_url, create_master_df=False):
-    for link in target_url:
+def scrape_all_reviews(target_url_list, create_master_df=False):
+    """
+    All in one function that, should the user provide a list of series links, scrape episode reviews from all of them. Calls on the scrape_series_reviews function, below.
+
+    Input:
+    ---
+    *target_url_list: List; list of string of the series page URLs that we want to scrape reviews from.
+    *creat_summary_master_df: Boolean; usually set to false. Will create a Master DF to append reviews to if True.
+
+    Output:
+    ---
+    Pretty much the same as scrape_series_reviews function (a dataframe and a pickled object), but only as often as the links in the list it's first fed.
+    """
+    for link in target_url_list:
         scrape_series_reviews(link, create_master_df)
 
 

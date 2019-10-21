@@ -80,11 +80,16 @@ def create_combined_master_df(DF_storage_directory="data/"):
     combined_master_df["super_blob"] = combined_master_df["synopsis"]+" "+combined_master_df["title_blob"]+" "+combined_master_df["rev_blob"]
     combined_master_df.to_pickle("data/combined_info_rev_df.pkl.bz2", compression="bz2")
 
-    # And finally, we give the DF an identifier column, smashing Series, Season, and Episode columns together:
+    # Next, we give the DF an identifier column, smashing Series, Season, and Episode columns together:
     for idx, episode in enumerate(combined_test["episode"].values):
         if episode < 10:
             combined_test.loc[idx, "identifier"] = f"{combined_test.loc[idx, 'series']}" + "s0" + f"{combined_test.loc[idx, 'season']}" + "e0" + f"{combined_test.loc[idx, 'episode']}"
         else:
             combined_test.loc[idx, "identifier"] = f"{combined_test.loc[idx, 'series']}" + "s0" + f"{combined_test.loc[idx, 'season']}" + "e" + f"{combined_test.loc[idx, 'episode']}"
+
+    # And finally, this bit standardizes the titles to match those found on the Memory Alpha wiki:
+    for idx, title in enumerate(combined_test["ep_title"].values):
+        if ":" in title:
+            combined_test.loc[idx, "ep_title"] = title.replace(":", ",")
 
     return combined_master_df
