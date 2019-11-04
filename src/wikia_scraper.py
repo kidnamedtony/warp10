@@ -103,19 +103,23 @@ def scrape_series_summaries(target_url, create_summary_master_df=False):
         ep_soup = BeautifulSoup(ep_resp.content, "html.parser")
 
         # Stripping away the extraneous junk from the page's episode title and then saving it for later:
-        ep_title_until_idx = ep_soup.title.text.index("(episode)")
-        ep_title = ep_soup.title.text[:ep_title_until_idx].rstrip()
+        # ep_title_until_idx = ep_soup.title.text.index("(episode)")
+        # ep_title = ep_soup.title.text[:ep_title_until_idx].rstrip()
 
         # Saving our episode content div:
         ep_content_div = ep_soup.find("div", {"class": "mw-content-ltr mw-content-text"})
 
         # Setting the indices from and to the point that we want to capture in the next step (e.g., we want all text from "Summary" until "Memorable Quotes" on the page):
-        from_summary = ep_content_div.text.index("Summary")
-        until_memorable_quotes = ep_content_div.text.index("Memorable quotes")
+        # from_summary = ep_content_div.text.index("Summary")
+        # until_memorable_quotes = ep_content_div.text.lower().index("memorable quotes")
 
         # The aforementioned "next step" where we save title and summary to a dictionary:
+        # summary_content = {"ep_title": [ep_soup.title.text[:ep_soup.title.text.index("(episode)")].rstrip()],
+        #            "summary": [ep_content_div.text[from_summary+13:until_memorable_quotes].lstrip()]}
+
+        # Now, we're just scraping ALL the text on the episode page, not just the summary:
         summary_content = {"ep_title": [ep_soup.title.text[:ep_soup.title.text.index("(episode)")].rstrip()],
-                   "summary": [ep_content_div.text[from_summary+13:until_memorable_quotes].lstrip()]}
+                   "summary": [ep_content_div.text]}
 
         # Turning dictionary into a DF, and then appending it to the master DF:
         ep_summary_df = pd.DataFrame.from_dict(summary_content)

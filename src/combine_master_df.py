@@ -76,20 +76,21 @@ def create_combined_master_df(DF_storage_directory="data/"):
     combined_master_df.drop_duplicates(inplace=True)
     combined_master_df = combined_master_df.reset_index().drop("index", axis=1)
 
+    # Standardizing the titles so that we can join them with the Memory Alpha wiki summaries later (we'll be doing the same for the Memory Alpha wiki episode titles, too):
+    for idx, title in enumerate(combined_master_df["ep_title"].values):
+        if "Part I" in title:
+            title = title.replace(",", ":")
+            combined_master_df.loc[idx, "ep_title"] = title
+
+    # Next, we give the DF an identifier column, smashing Series, Season, and Episode columns together (e.g. "TNGs05e12"):
+    for idx, episode in enumerate(combined_master_df["episode"].values):
+        if episode < 10:
+            combined_master_df.loc[idx, "identifier"] = f"{combined_master_df.loc[idx, 'series']}" + "s0" + f"{combined_master_df.loc[idx, 'season']}" + "e0" + f"{combined_master_df.loc[idx, 'episode']}"
+        else:
+            combined_master_df.loc[idx, "identifier"] = f"{combined_master_df.loc[idx, 'series']}" + "s0" + f"{combined_master_df.loc[idx, 'season']}" + "e" + f"{combined_master_df.loc[idx, 'episode']}"
+
     # Here we smash all the text columns into one (so that we can cluster it with KMeans later):
     combined_master_df["super_blob"] = combined_master_df["synopsis"]+" "+combined_master_df["title_blob"]+" "+combined_master_df["rev_blob"]
     combined_master_df.to_pickle("data/combined_info_rev_df.pkl.bz2", compression="bz2")
-
-    # Next, we give the DF an identifier column, smashing Series, Season, and Episode columns together:
-    for idx, episode in enumerate(combined_test["episode"].values):
-        if episode < 10:
-            combined_test.loc[idx, "identifier"] = f"{combined_test.loc[idx, 'series']}" + "s0" + f"{combined_test.loc[idx, 'season']}" + "e0" + f"{combined_test.loc[idx, 'episode']}"
-        else:
-            combined_test.loc[idx, "identifier"] = f"{combined_test.loc[idx, 'series']}" + "s0" + f"{combined_test.loc[idx, 'season']}" + "e" + f"{combined_test.loc[idx, 'episode']}"
-
-    # And finally, this bit standardizes the titles to match those found on the Memory Alpha wiki:
-    for idx, title in enumerate(combined_test["ep_title"].values):
-        if ":" in title:
-            combined_test.loc[idx, "ep_title"] = title.replace(":", ",")
 
     return combined_master_df
