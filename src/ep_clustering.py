@@ -33,7 +33,7 @@ def vectorize(max_features=None):
 
     # Setting our stopwords for vectorization:
     additional_stopwords = ["episode", "production", "star", "trek", "aren'", "couldn'", "didn'",
-                            "doesn'", "don'", "hadn'", "hasn'", "haven'", "isn'", "it'", "mightn'", "mustn'", "needn'", "shan'", "she'", "should'", "shouldn'", "that'", "wasn'", "weren'", "won'", "wouldn'", "you'"]
+                            "doesn'", "don'", "hadn'", "hasn'", "haven'", "isn'", "it'", "mightn'", "mustn'", "needn'", "shan'", "she'", "should'", "shouldn'", "that'", "wasn'", "weren'", "won'", "wouldn'", "you'", "also", "like"]
 
     stopwords_ = set(stopwords.words("english") + additional_stopwords)
 
@@ -74,35 +74,38 @@ def get_silhouette_score(max_clusters=24):
     plt.show()
     plt.savefig("data/silhouette_score_graph.png")
 
-def vectorize(opt_clusters=8, X):
+def clusterize(opt_clusters=13, rand_state=0, imdb_rating_threshhold=7.0, X):
     """
+    Clustering algorithm to...cluster all your vectorized terms. Optimal clusters and random state have default values set based on optimal clustering of Star Trek text data.
 
+    Prints semi-random recommendation of episodes from each cluster, so long as they're rated above a user-defined threshold. Default is set to 7.0, however.
     """
     kmeans_clusterer = KMeans(n_clusters=opt_clusters,
                               n_jobs=-1,
-                              verbose=1
+                              verbose=1,
+                              random_state=rand_state
                               )
     kmeans_clusterer.fit(X)
 
     # After the data is fit to the vectorizer, we can determine our cluster centers and their top 15 terms:
     centroid_array = kmeans_clusterer.cluster_centers_
     top_centroids = centroid_array.argsort()[:, -1:-16:-1]
-    print("Top 10 words for each cluster:\n")
+    print("Top 15 words for each cluster:\n")
     for num, centroid in enumerate(top_centroids):
         print(f"Centroid {num} :",", ".join(features[i] for i in centroid),"\n")
 
-    print("A random GOOD (7.0+ rating) episode in each cluster:\n")
+    print(f"A random GOOD ({imdb_rating_threshhold}+ rating) episode in each cluster:\n")
     assigned_cluster = kmeans_clusterer.transform(X).argmin(axis=1)
     for i in range(kmeans_clusterer.n_clusters):
         cluster = np.arange(0, X.shape[0])[assigned_cluster==i]
         ep_title_proposal = np.random.choice(cluster, 1, replace=False)
-        if combined_master_df.loc[ep_title_proposal, "IMDB_user_rating"].values >= 7.0:
+        if combined_master_df.loc[ep_title_proposal, "IMDB_user_rating"].values >= imdb_rating_threshhold:
             sample_ep_titles = ep_title_proposal
         else:
             continue
         print("Cluster %d:" % i)
         for ep_title in sample_ep_titles:
-            print(f'{combined_master_df.loc[ep_title]["series"]} S:{combined_master_df.loc[ep_title]["season"]}E:{combined_master_df.loc[ep_title]["season"]} {combined_master_df.loc[ep_title]["ep_title"]},  {combined_master_df.loc[ep_title]["IMDB_user_rating"]}')
+            print(f'{combined_master_df.loc[ep_title]["series"]} S:{combined_master_df.loc[ep_title]["season"]}E:{combined_master_df.loc[ep_title]["episode"]} {combined_master_df.loc[ep_title]["ep_title"]},  {combined_master_df.loc[ep_title]["IMDB_user_rating"]}')
 
 
     # # Print a random selection of episodes from each cluster:
