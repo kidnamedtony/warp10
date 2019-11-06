@@ -26,7 +26,7 @@ def create_df_for_vectorization():
 
 def vectorize(max_features=None):
     """
-    Function to vectorize the word blobs in our DF. Returns X
+    Function to vectorize the word blobs in our DF. Returns X and features arrays.
     """
     # Here, we set our tokenizer for vectorization. This is an imperfect process, but the RegexpTokenizer seems to work the best at stripping out unnecessary chars, despite the fact that it splits nouns with hyphens and apostrophes:
     tokenizer = RegexpTokenizer(r"\w+")
@@ -46,10 +46,12 @@ def vectorize(max_features=None):
                                  )
 
     # Here, we set our X to be the text we're looking to cluster; in this instance, the ultra_blob column of our DF. We want ALL of it:
-    X = test_vectorizer.fit_transform(combined_master_df["ultra_blob"])
+    X = vectorizer.fit_transform(combined_master_df["ultra_blob"])
+
+    features = vectorizer.get_feature_names()
     print(f"Shape of X: {not_X.shape}")
     print(f"X as dense matrix: {not_X.todense()}")
-    return X
+    return X, features
 
 def get_silhouette_score(max_clusters=24):
     """
@@ -74,11 +76,23 @@ def get_silhouette_score(max_clusters=24):
     plt.show()
     plt.savefig("data/silhouette_score_graph.png")
 
-def clusterize(opt_clusters=13, rand_state=0, imdb_rating_threshhold=7.0, X):
+def clusterize(opt_clusters=13, rand_state=0, imdb_rating_threshhold=7.0, X, features_arr):
     """
     Clustering algorithm to...cluster all your vectorized terms. Optimal clusters and random state have default values set based on optimal clustering of Star Trek text data.
 
     Prints semi-random recommendation of episodes from each cluster, so long as they're rated above a user-defined threshold. Default is set to 7.0, however.
+
+    Input:
+    ---
+    *opt_clusters: int; optimal number of clusters you want the data to be split into
+    *rand_state:int; (optional) random seed. Setting this should split the data consistently whenever this k-means is run again.
+    *imdb_rating_threshhold: float; default set to 7.0, assuming that that's a decent enough rating for recommendations to be made.
+    *X: array of data to be clustered.
+    *features_arr: array of features from vectorizer.
+
+    Output:
+    ---
+    Prints top 15 words per cluster, along with a random episode at or above the rating threshhold set as a parameter, above, for each cluster.
     """
     kmeans_clusterer = KMeans(n_clusters=opt_clusters,
                               n_jobs=-1,
